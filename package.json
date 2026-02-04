@@ -12,6 +12,7 @@
     ".": "./dist/index.js",
     "./next": "./dist/next/index.js",
     "./mdx": "./dist/mdx/index.js",
+    "./nextra": "./dist/nextra/index.js",
     "./styles/*": "./styles/*"
   },
   "scripts": {
