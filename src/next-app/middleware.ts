@@ -28,7 +28,12 @@ const getExtension = (pathname: string) => {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!pathname.startsWith('/docs/')) {
+  if (
+    !pathname.startsWith('/docs/') &&
+    !pathname.startsWith('/exams/') &&
+    !pathname.startsWith('/layout-preview/') &&
+    !pathname.startsWith('/submissions/')
+  ) {
     return NextResponse.next();
   }
 
@@ -47,6 +52,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/docs/:path*'],
+  matcher: [
+    '/docs/:path*',
+    '/exams/:path*',
+    '/layout-preview/:path*',
+    '/submissions/:path*',
+  ],
 };
-

@@ -1,7 +1,7 @@
-import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
-import path from 'node:path';
-import { Readable } from 'node:stream';
+import { createReadStream } from 'fs';
+import { stat } from 'fs/promises';
+import path from 'path';
+import { Readable } from 'stream';
 
 export const runtime = 'nodejs';
 
@@ -52,13 +52,15 @@ const safeDecodeSegment = (segment: string) => {
   }
 };
 
+const allowedRoots = new Set(['docs', 'exams', 'layout-preview', 'submissions']);
+
 export const GET = async (
   request: Request,
   context: { params: Promise<{ assetPath: string[] }> }
 ) => {
   const { assetPath } = await context.params;
 
-  if (!assetPath?.length || assetPath[0] !== 'docs') {
+  if (!assetPath?.length || !allowedRoots.has(assetPath[0] ?? '')) {
     return new Response('Not Found', { status: 404 });
   }
 
@@ -106,4 +108,3 @@ export const GET = async (
   const body = Readable.toWeb(stream) as ReadableStream;
   return new Response(body, { status: 200, headers });
 };
-
