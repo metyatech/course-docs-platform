@@ -7,6 +7,15 @@ const ignoredDirectories = new Set(['.git', 'node_modules']);
 
 const normalizePath = (value: string) => value.split(path.sep).join('/');
 
+const getWorksIndexUrlFromEnv = (): string | null => {
+  const baseUrl = (process.env.NEXT_PUBLIC_WORKS_BASE_URL ?? '').trim();
+  if (!baseUrl) {
+    return null;
+  }
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  return `${trimmed}/works-index.json`;
+};
+
 const findIndexHtmlPath = (studentPath: string, basePath: string): string | null => {
   if (!fs.existsSync(studentPath)) {
     return null;
@@ -55,7 +64,7 @@ const findIndexHtmlPath = (studentPath: string, basePath: string): string | null
   return null;
 };
 
-export const getStudentWorksData = (basePath = studentWorksBasePath): StudentWorksData => {
+const getStudentWorksDataFromFs = (basePath = studentWorksBasePath): StudentWorksData => {
   if (!fs.existsSync(basePath)) {
     return { years: {} };
   }
@@ -91,4 +100,76 @@ export const getStudentWorksData = (basePath = studentWorksBasePath): StudentWor
   }
 
   return { years: data };
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const coerceStudentWorksData = (value: unknown): StudentWorksData | null => {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+  const yearsRaw = value.years;
+  if (!isPlainObject(yearsRaw)) {
+    return null;
+  }
+
+  const years: Record<string, StudentWorkEntry[]> = {};
+  for (const [year, entriesRaw] of Object.entries(yearsRaw)) {
+    if (!Array.isArray(entriesRaw)) {
+      return null;
+    }
+    const entries: StudentWorkEntry[] = [];
+    for (const entryRaw of entriesRaw) {
+      if (!isPlainObject(entryRaw)) {
+        return null;
+      }
+      const studentId = entryRaw.studentId;
+      const workPath = entryRaw.workPath;
+      if (typeof studentId !== 'string') {
+        return null;
+      }
+      if (typeof workPath !== 'string' && workPath !== null) {
+        return null;
+      }
+      entries.push({ studentId, workPath });
+    }
+    years[year] = entries;
+  }
+
+  return { years };
+};
+
+const getStudentWorksDataFromRemoteIndex = async (indexUrl: string): Promise<StudentWorksData | null> => {
+  try {
+    const res = await fetch(indexUrl, { cache: 'no-store' });
+    if (!res.ok) {
+      console.warn(`Failed to fetch works index: ${indexUrl} (${res.status})`);
+      return null;
+    }
+    const json = (await res.json()) as unknown;
+    const coerced = coerceStudentWorksData(json);
+    if (!coerced) {
+      console.warn(`Invalid works index JSON: ${indexUrl}`);
+      return null;
+    }
+    return coerced;
+  } catch (error) {
+    console.warn(`Error fetching works index: ${indexUrl}`, error);
+    return null;
+  }
+};
+
+export const getStudentWorksData = async (basePath = studentWorksBasePath): Promise<StudentWorksData> => {
+  if (fs.existsSync(basePath)) {
+    return getStudentWorksDataFromFs(basePath);
+  }
+
+  const indexUrl = getWorksIndexUrlFromEnv();
+  if (!indexUrl) {
+    return { years: {} };
+  }
+
+  const fromRemote = await getStudentWorksDataFromRemoteIndex(indexUrl);
+  return fromRemote ?? { years: {} };
 };
