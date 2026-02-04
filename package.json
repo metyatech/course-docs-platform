@@ -13,10 +13,12 @@
     "./next": "./dist/next/index.js",
     "./mdx": "./dist/mdx/index.js",
     "./nextra": "./dist/nextra/index.js",
+    "./next-app": "./dist/next-app/index.js",
+    "./submissions": "./dist/submissions/index.js",
     "./styles/*": "./styles/*"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck",
     "prepare": "npm run build"
@@ -24,17 +26,24 @@
   "dependencies": {
     "@metyatech/code-preview": "github:metyatech/code-preview#main",
     "@metyatech/exercise": "github:metyatech/exercise-module",
+    "@re-dev/react-truncate": "^0.5.2",
+    "@supabase/supabase-js": "^2.49.1",
+    "lucide-react": "^0.563.0",
     "remark-directive": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "unist-util-visit": "^5.0.0"
   },
   "peerDependencies": {
+    "next": "*",
+    "nextra": "*",
     "nextra-theme-docs": "*",
     "react": "*"
   },
   "devDependencies": {
+    "next": "^15.5.9",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
     "nextra": "^4.6.1",
     "nextra-theme-docs": "^4.6.1",
     "react": "^19.2.3",

@@ -1,0 +1,373 @@
+.submissionsRoot {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.submissionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.submissionsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.yearSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.yearLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.yearSelect {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  background: var(--nextra-content-bg, white);
+}
+
+.submissionsContent {
+  margin-top: 1rem;
+}
+
+.emptyMessage {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--nextra-content-bg, white);
+}
+
+.cardHeader {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.cardTitle {
+  font-weight: 700;
+}
+
+.cardPreview {
+  aspect-ratio: 16 / 10;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: white;
+}
+
+.iframePlaceholder {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 1rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.cardBody {
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.contentBlock {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.placeholder {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.introText {
+  white-space: pre-wrap;
+}
+
+.introEditButton {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+}
+
+.introEditor {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.introTextarea {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.5rem;
+}
+
+.introEditorActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.introSaveButton,
+.introCancelButton {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  background: transparent;
+}
+
+.commentToggleButton {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  width: 100%;
+}
+
+.dataError {
+  color: #b00020;
+  font-size: 0.9rem;
+}
+
+.commentDrawerRoot {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.commentDrawerOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+  border: 0;
+}
+
+.commentDrawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(540px, 92vw);
+  background: white;
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.commentDrawerOpen .commentDrawer {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.commentDrawerOpen .commentDrawerOverlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.commentDrawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.commentDrawerTitle {
+  font-weight: 700;
+}
+
+.commentDrawerMeta {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.commentDrawerClose {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.4rem 0.7rem;
+  background: transparent;
+}
+
+.commentsRoot {
+  padding: 1rem;
+  overflow: auto;
+}
+
+.commentForm {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.commentLabel {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.commentInput,
+.commentTextarea {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.5rem;
+}
+
+.commentSubmit {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.commentList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.commentItem {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.authorToggle {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-grid;
+  place-content: center;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.commentAuthor {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.commentAuthorVisible {
+  opacity: 1;
+}
+
+.commentDate {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.commentDelete {
+  border: 0;
+  background: transparent;
+  color: rgba(180, 0, 0, 0.9);
+  display: inline-grid;
+  place-content: center;
+}
+
+.commentBody {
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+}
+
+.commentEmpty {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.adminFooter {
+  position: relative;
+}
+
+.adminFooterButton {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  background: transparent;
+  font-size: 0.85rem;
+}
+
+.adminFooterPanel {
+  position: absolute;
+  right: 0;
+  bottom: 2.2rem;
+  width: 240px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 12px;
+  background: white;
+  padding: 0.75rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.adminFooterLabel {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.adminFooterInput {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.45rem 0.5rem;
+}
+
+.adminFooterSave {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.02);
+}
+
