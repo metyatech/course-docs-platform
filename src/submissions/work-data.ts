@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 import type { StudentWorkEntry, StudentWorksData } from './types.js';
 
 const studentWorksBasePath = path.join(process.cwd(), 'public', 'student-works');
@@ -92,4 +92,3 @@ export const getStudentWorksData = (basePath = studentWorksBasePath): StudentWor
 
   return { years: data };
 };
-

@@ -14,7 +14,16 @@
     "./mdx": "./dist/mdx/index.js",
     "./nextra": "./dist/nextra/index.js",
     "./next-app": "./dist/next-app/index.js",
+    "./next-app/create-docs-layout": "./dist/next-app/create-docs-layout.js",
+    "./next-app/create-root-layout": "./dist/next-app/create-root-layout.js",
+    "./next-app/home-page": "./dist/next-app/home-page.js",
+    "./next-app/mdx-page": "./dist/next-app/mdx-page.js",
+    "./next-app/middleware": "./dist/next-app/middleware.js",
+    "./next-app/asset-route": "./dist/next-app/asset-route.js",
+    "./next-app/admin-comment-delete-route": "./dist/next-app/admin-comment-delete-route.js",
     "./submissions": "./dist/submissions/index.js",
+    "./submissions/submissions-page": "./dist/submissions/submissions-page.js",
+    "./submissions/admin-footer-toggle": "./dist/submissions/admin-footer-toggle.js",
     "./styles/*": "./styles/*"
   },
   "scripts": {
