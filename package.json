@@ -1,0 +1,45 @@
+{
+  "name": "@metyatech/course-docs-platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist",
+    "styles",
+    ".github/actions"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./next": "./dist/next/index.js",
+    "./mdx": "./dist/mdx/index.js",
+    "./styles/*": "./styles/*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "npm run typecheck",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@metyatech/code-preview": "github:metyatech/code-preview#main",
+    "@metyatech/exercise": "github:metyatech/exercise-module",
+    "remark-directive": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "unist-util-visit": "^5.0.0"
+  },
+  "peerDependencies": {
+    "nextra-theme-docs": "*",
+    "react": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "@types/react": "^19.2.9",
+    "nextra": "^4.6.1",
+    "nextra-theme-docs": "^4.6.1",
+    "react": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}
