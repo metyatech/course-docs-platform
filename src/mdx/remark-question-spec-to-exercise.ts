@@ -43,6 +43,38 @@ const applyClozeConversion = (nodes: any[]) => {
   });
 };
 
+const sanitizeIdPart = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed
+    .replace(/\s+/g, '-')
+    .replace(/[^\p{L}\p{N}_-]/gu, '');
+};
+
+const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
+  const root = { type: 'root', children: nodes };
+  const counts = new Map<string, number>();
+
+  visit(root, (node: any) => {
+    if (!isHeading(node)) return;
+    if (typeof node.depth !== 'number' || node.depth < 3) return;
+
+    const text = normalizeHeadingText(node);
+    const slug = sanitizeIdPart(text) || 'section';
+    const baseId = `${idPrefix}-${slug}`;
+    const prev = counts.get(baseId) ?? 0;
+    counts.set(baseId, prev + 1);
+
+    const id = prev === 0 ? baseId : `${baseId}-${prev}`;
+
+    node.data = node.data ?? {};
+    node.data.hProperties = {
+      ...(node.data.hProperties ?? {}),
+      id,
+    };
+  });
+};
+
 const parseScoringLines = (nodes: any[]) => {
   const raw = nodes
     .map((node) => getText(node))
@@ -161,6 +193,11 @@ export default function remarkQuestionSpecToExercise() {
       throw new Error(`Question spec requires "## Prompt": ${filePath}`);
     }
 
+    const fileBase = filePath.split('/').pop() ?? '';
+    const idPrefix = fileBase.endsWith('.md')
+      ? fileBase.slice(0, -'.md'.length)
+      : fileBase || 'question';
+
     const optionsSection = [...(sections.get('Options') ?? [])];
     const scoringSection = [...(sections.get('Scoring') ?? [])];
     const explanationSection = [...(sections.get('Explanation') ?? [])];
@@ -174,6 +211,14 @@ export default function remarkQuestionSpecToExercise() {
       applyClozeConversion(optionsSection);
       applyClozeConversion(explanationSection);
     }
+
+    // Headings inside imported question MDX files are slugged independently, which can
+    // produce duplicate ids across questions when multiple are rendered on one page.
+    // Prefix heading ids by file name to keep them unique (and avoid React key warnings).
+    applyHeadingIdPrefix(promptNodes, idPrefix);
+    applyHeadingIdPrefix(examTipNodes, idPrefix);
+    applyHeadingIdPrefix(optionsSection, idPrefix);
+    applyHeadingIdPrefix(explanationSection, idPrefix);
 
     const exerciseChildren: any[] = [
       ...promptNodes,

@@ -93,3 +93,42 @@ test('cloze also replaces markers inside code blocks', async () => {
   assert.match(allText, /const x = \$\{answer\};/);
   assert.match(allText, /\{\{notBlank\}\}/);
 });
+
+test('headings inside question content get a stable id prefix per file', async () => {
+  const { default: remarkQuestionSpecToExercise } = await import(pluginModulePath);
+
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: '問題（見出し）' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Type' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'descriptive' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
+      { type: 'heading', depth: 3, children: [{ type: 'text', value: '解説' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'prompt content' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Explanation' }] },
+      { type: 'heading', depth: 3, children: [{ type: 'text', value: '解説' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'explanation content' }] },
+    ],
+  };
+
+  const transform = remarkQuestionSpecToExercise();
+  transform(tree, { path: '/content/exams/x/prep/questions/q1.md' });
+
+  const exercise = tree.children[0];
+  const allHeadings = [];
+  const walk = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'heading') allHeadings.push(node);
+    if (Array.isArray(node.children)) node.children.forEach(walk);
+  };
+  walk(exercise);
+
+  // The plugin wraps content into <Exercise>, so headings live inside its children.
+  // Ensure ids exist and are prefixed to avoid duplicates when multiple questions are imported on one page.
+  const ids = allHeadings.map((h) => h.data?.hProperties?.id).filter(Boolean);
+  assert.ok(ids.length >= 2);
+  for (const id of ids) {
+    assert.match(id, /^q1-/);
+  }
+});
