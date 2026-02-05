@@ -12,6 +12,7 @@ This repository is intended to be consumed by:
 - Shared Next/Nextra config helpers (MDX remark plugins, webpack asset rules).
 - Shared MDX components wiring for course sites.
 - Course site features (e.g. submissions page components and API routes).
+- Rendering conventions for question Markdown (see `docs/markdown-question-spec-course-docs-rendering.md`).
 
 ## Requirements
 
