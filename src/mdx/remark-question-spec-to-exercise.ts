@@ -144,7 +144,8 @@ export default function remarkQuestionSpecToExercise() {
   return function transform(tree: any, file: any) {
     const filePath =
       typeof file?.path === 'string' ? file.path.replaceAll('\\', '/') : '';
-    const isQuestionSpec = filePath.includes('/questions/');
+    const isQuestionSpec =
+      filePath.includes('/questions/') && filePath.endsWith('.qspec.md');
     if (!isQuestionSpec) return;
 
     const children: any[] = Array.isArray(tree?.children) ? tree.children : [];
@@ -195,9 +196,11 @@ export default function remarkQuestionSpecToExercise() {
     }
 
     const fileBase = filePath.split('/').pop() ?? '';
-    const idPrefix = fileBase.endsWith('.md')
-      ? fileBase.slice(0, -'.md'.length)
-      : fileBase || 'question';
+    const idPrefix = fileBase.endsWith('.qspec.md')
+      ? fileBase.slice(0, -'.qspec.md'.length)
+      : fileBase.endsWith('.md')
+        ? fileBase.slice(0, -'.md'.length)
+        : fileBase || 'question';
 
     const optionsSection = [...(sections.get('Options') ?? [])];
     const scoringSection = [...(sections.get('Scoring') ?? [])];

@@ -10,6 +10,14 @@ These conventions:
 
 ## Conventions
 
+## File naming / scope
+
+The Course Docs Site applies these conventions **only** to files under `content/**/questions/` whose filename ends with:
+
+- `.qspec.md`
+
+This makes the behavior explicit and avoids transforming unrelated documents that happen to contain similar headings.
+
 ### `### Exam` (inside `## Prompt`)
 
 If a question contains the heading `### Exam` under `## Prompt`, the Course Docs Site renders that block as a **Tip-style callout** titled `本試験では`.

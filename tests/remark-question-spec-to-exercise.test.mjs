@@ -22,7 +22,7 @@ test('question-spec markdown transforms into <Exercise> + <Solution>', async () 
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/questions/q1.md' });
+  transform(tree, { path: '/content/exams/questions/q1.qspec.md' });
 
   assert.equal(tree.children.length, 1);
   const exercise = tree.children[0];
@@ -57,7 +57,7 @@ test('cloze replaces {{answer}} with ${answer} (and keeps escaped \\\\{{)', asyn
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/questions/q2.md' });
+  transform(tree, { path: '/content/exams/questions/q2.qspec.md' });
 
   const exercise = tree.children[0];
   const allText = JSON.stringify(exercise);
@@ -86,7 +86,7 @@ test('cloze also replaces markers inside code blocks', async () => {
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/questions/q3.md' });
+  transform(tree, { path: '/content/exams/questions/q3.qspec.md' });
 
   const exercise = tree.children[0];
   const allText = JSON.stringify(exercise);
@@ -113,7 +113,7 @@ test('headings inside question content get a stable id prefix per file', async (
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/x/prep/questions/q1.md' });
+  transform(tree, { path: '/content/exams/x/prep/questions/q1.qspec.md' });
 
   const exercise = tree.children[0];
   const allHeadings = [];
@@ -152,7 +152,7 @@ test('### Exam under Prompt becomes a tip admonition', async () => {
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/x/prep/questions/q1.md' });
+  transform(tree, { path: '/content/exams/x/prep/questions/q1.qspec.md' });
 
   const exercise = tree.children[0];
   const admonitions = (exercise.children ?? []).filter(
@@ -165,4 +165,23 @@ test('### Exam under Prompt becomes a tip admonition', async () => {
   const type = (tip.attributes ?? []).find((attr) => attr?.name === 'type')?.value;
   assert.equal(type, 'tip');
   assert.equal(title, '本試験では');
+});
+
+test('non-qspec markdown under questions/ is not transformed', async () => {
+  const { default: remarkQuestionSpecToExercise } = await import(pluginModulePath);
+
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: 'Not a question spec' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'Looks similar but should not transform.' }] },
+    ],
+  };
+
+  const transform = remarkQuestionSpecToExercise();
+  transform(tree, { path: '/content/exams/x/prep/questions/q1.md' });
+
+  assert.equal(tree.children[0]?.type, 'heading');
+  assert.equal(tree.children[0]?.depth, 1);
 });
