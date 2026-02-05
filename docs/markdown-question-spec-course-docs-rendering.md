@@ -12,11 +12,11 @@ These conventions:
 
 ## File naming / scope
 
-The Course Docs Site applies these conventions **only** to files under `content/**/questions/` whose filename ends with:
+The Course Docs Site applies these conventions **only** to Markdown files whose filename ends with:
 
 - `.qspec.md`
 
-This makes the behavior explicit and avoids transforming unrelated documents that happen to contain similar headings.
+No specific directory (such as `questions/`) is required. This makes the behavior explicit and avoids transforming unrelated documents that happen to contain similar headings.
 
 ### `### Exam` (inside `## Prompt`)
 

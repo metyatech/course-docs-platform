@@ -144,8 +144,7 @@ export default function remarkQuestionSpecToExercise() {
   return function transform(tree: any, file: any) {
     const filePath =
       typeof file?.path === 'string' ? file.path.replaceAll('\\', '/') : '';
-    const isQuestionSpec =
-      filePath.includes('/questions/') && filePath.endsWith('.qspec.md');
+    const isQuestionSpec = filePath.endsWith('.qspec.md');
     if (!isQuestionSpec) return;
 
     const children: any[] = Array.isArray(tree?.children) ? tree.children : [];

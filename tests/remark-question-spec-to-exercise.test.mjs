@@ -22,7 +22,7 @@ test('question-spec markdown transforms into <Exercise> + <Solution>', async () 
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/questions/q1.qspec.md' });
+  transform(tree, { path: '/content/exams/q1.qspec.md' });
 
   assert.equal(tree.children.length, 1);
   const exercise = tree.children[0];
@@ -57,7 +57,7 @@ test('cloze replaces {{answer}} with ${answer} (and keeps escaped \\\\{{)', asyn
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/questions/q2.qspec.md' });
+  transform(tree, { path: '/content/exams/q2.qspec.md' });
 
   const exercise = tree.children[0];
   const allText = JSON.stringify(exercise);
@@ -86,7 +86,7 @@ test('cloze also replaces markers inside code blocks', async () => {
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/questions/q3.qspec.md' });
+  transform(tree, { path: '/content/exams/q3.qspec.md' });
 
   const exercise = tree.children[0];
   const allText = JSON.stringify(exercise);
@@ -113,7 +113,7 @@ test('headings inside question content get a stable id prefix per file', async (
   };
 
   const transform = remarkQuestionSpecToExercise();
-  transform(tree, { path: '/content/exams/x/prep/questions/q1.qspec.md' });
+  transform(tree, { path: '/content/exams/x/prep/q1.qspec.md' });
 
   const exercise = tree.children[0];
   const allHeadings = [];
