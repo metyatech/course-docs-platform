@@ -10,9 +10,9 @@ These conventions:
 
 ## Conventions
 
-### `### 本試験では` (inside `## Prompt`)
+### `### Exam` (inside `## Prompt`)
 
-If a question contains the heading `### 本試験では` under `## Prompt`, the Course Docs Site renders that block as a **Tip-style callout**.
+If a question contains the heading `### Exam` under `## Prompt`, the Course Docs Site renders that block as a **Tip-style callout** titled `本試験では`.
 
 Use it to describe “in the real exam…” notes (e.g., identifiers/values will differ).
 
@@ -32,4 +32,3 @@ Within `## Explanation`, the following sub-headings are recommended:
 - `### 解説` (for a short explanation)
 
 When multiple questions are rendered on the same page, the renderer ensures heading IDs remain unique to avoid client-side key collisions.
-

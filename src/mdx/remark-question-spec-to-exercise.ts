@@ -99,7 +99,8 @@ const splitExamTip = (promptNodes: any[]) => {
   let i = 0;
   while (i < promptNodes.length) {
     const node = promptNodes[i];
-    if (isHeading(node, 3) && normalizeHeadingText(node) === '本試験では') {
+    const headingText = isHeading(node, 3) ? normalizeHeadingText(node) : '';
+    if (headingText === 'Exam' || headingText === 'exam') {
       i += 1;
       while (i < promptNodes.length) {
         const next = promptNodes[i];

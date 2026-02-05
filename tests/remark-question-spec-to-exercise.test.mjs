@@ -132,3 +132,37 @@ test('headings inside question content get a stable id prefix per file', async (
     assert.match(id, /^q1-/);
   }
 });
+
+test('### Exam under Prompt becomes a tip admonition', async () => {
+  const { default: remarkQuestionSpecToExercise } = await import(pluginModulePath);
+
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: '問題（Exam）' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Type' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'descriptive' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'prompt body' }] },
+      { type: 'heading', depth: 3, children: [{ type: 'text', value: 'Exam' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'exam note' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Explanation' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'answer' }] },
+    ],
+  };
+
+  const transform = remarkQuestionSpecToExercise();
+  transform(tree, { path: '/content/exams/x/prep/questions/q1.md' });
+
+  const exercise = tree.children[0];
+  const admonitions = (exercise.children ?? []).filter(
+    (child) => child?.type === 'mdxJsxFlowElement' && child?.name === 'Admonition',
+  );
+
+  assert.equal(admonitions.length, 1);
+  const tip = admonitions[0];
+  const title = (tip.attributes ?? []).find((attr) => attr?.name === 'title')?.value;
+  const type = (tip.attributes ?? []).find((attr) => attr?.name === 'type')?.value;
+  assert.equal(type, 'tip');
+  assert.equal(title, '本試験では');
+});
