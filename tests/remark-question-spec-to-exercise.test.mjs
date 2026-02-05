@@ -1,0 +1,95 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+const pluginModulePath = '../dist/mdx/remark-question-spec-to-exercise.js';
+
+test('question-spec markdown transforms into <Exercise> + <Solution>', async () => {
+  const { default: remarkQuestionSpecToExercise } = await import(pluginModulePath);
+
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: '問題1（テスト）' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Type' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'descriptive' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'ここが問題文です。' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Scoring' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: '3: 期待通り動作する' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Explanation' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'ここが解説です。' }] },
+    ],
+  };
+
+  const transform = remarkQuestionSpecToExercise();
+  transform(tree, { path: '/content/exams/questions/q1.md' });
+
+  assert.equal(tree.children.length, 1);
+  const exercise = tree.children[0];
+  assert.equal(exercise.type, 'mdxJsxFlowElement');
+  assert.equal(exercise.name, 'Exercise');
+
+  const hasSolution = (exercise.children ?? []).some(
+    (child) => child?.type === 'mdxJsxFlowElement' && child?.name === 'Solution',
+  );
+  assert.equal(hasSolution, true);
+});
+
+test('cloze replaces {{answer}} with ${answer} (and keeps escaped \\\\{{)', async () => {
+  const { default: remarkQuestionSpecToExercise } = await import(pluginModulePath);
+
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: '問題（穴埋め）' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Type' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'cloze' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
+      {
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'A={{a}} / literal=\\{{b}} / C={{c}}' },
+        ],
+      },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Explanation' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'X={{x}}' }] },
+    ],
+  };
+
+  const transform = remarkQuestionSpecToExercise();
+  transform(tree, { path: '/content/exams/questions/q2.md' });
+
+  const exercise = tree.children[0];
+  const allText = JSON.stringify(exercise);
+  assert.match(allText, /\$\{a\}/);
+  assert.match(allText, /\$\{c\}/);
+  assert.match(allText, /\$\{x\}/);
+  assert.match(allText, /\{\{b\}\}/);
+});
+
+test('cloze also replaces markers inside code blocks', async () => {
+  const { default: remarkQuestionSpecToExercise } = await import(pluginModulePath);
+
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: '問題（コード）' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Type' }] },
+      { type: 'paragraph', children: [{ type: 'text', value: 'cloze' }] },
+      { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
+      {
+        type: 'code',
+        lang: 'js',
+        value: 'const x = {{answer}}; // and literal: \\{{notBlank}}',
+      },
+    ],
+  };
+
+  const transform = remarkQuestionSpecToExercise();
+  transform(tree, { path: '/content/exams/questions/q3.md' });
+
+  const exercise = tree.children[0];
+  const allText = JSON.stringify(exercise);
+  assert.match(allText, /const x = \$\{answer\};/);
+  assert.match(allText, /\{\{notBlank\}\}/);
+});

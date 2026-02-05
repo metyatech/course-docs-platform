@@ -1,0 +1,27 @@
+import { spawn } from 'node:child_process';
+
+const run = (command, args) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      shell: false,
+    });
+
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`));
+    });
+  });
+
+const runNpm = async (args) => {
+  if (process.platform === 'win32') {
+    await run('cmd.exe', ['/d', '/s', '/c', 'npm', ...args]);
+    return;
+  }
+
+  await run('npm', args);
+};
+
+await runNpm(['run', 'build']);
+await run(process.execPath, ['--test', 'tests/remark-question-spec-to-exercise.test.mjs']);
