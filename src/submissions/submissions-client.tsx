@@ -18,6 +18,8 @@ type SubmissionsClientProps = {
   studentWorks: StudentWorksData;
 };
 
+const SYNC_INTERVAL_MS = 15000;
+
 const formatSupabaseError = (error: unknown) => {
   if (!error || typeof error !== 'object') {
     return '保存に失敗しました。';
@@ -56,13 +58,17 @@ const buildWorkUrl = (baseUrl: string, workPath: string | null) => {
   return `${trimmedBase}/${workPath}`;
 };
 
-export default function SubmissionsClient({ studentWorks }: SubmissionsClientProps) {
+export default function SubmissionsClient({
+  studentWorks,
+}: SubmissionsClientProps) {
   const studentWorksData = studentWorks.years;
   const availableYears = useMemo(
     () => Object.keys(studentWorksData).sort().reverse(),
     [studentWorksData]
   );
-  const [selectedYear, setSelectedYear] = useState<string>(availableYears[0] ?? '');
+  const [selectedYear, setSelectedYear] = useState<string>(
+    availableYears[0] ?? ''
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined' || availableYears.length === 0) {
@@ -90,15 +96,21 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
     }
   };
 
-  const studentWorksInYear = selectedYear ? studentWorksData[selectedYear] || [] : [];
-  const worksBaseUrl = process.env.NEXT_PUBLIC_WORKS_BASE_URL ?? '';
+  const studentWorksInYear = selectedYear
+    ? studentWorksData[selectedYear] || []
+    : [];
+  const worksBaseUrl =
+    process.env.NEXT_PUBLIC_WORKS_BASE_URL ??
+    'https://metyatech.github.io/programming-course-docs';
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const [introMap, setIntroMap] = useState<WorkIntroMap>({});
   const [commentMap, setCommentMap] = useState<WorkCommentMap>({});
   const [dataError, setDataError] = useState<string | null>(null);
   const supabaseMissing = !supabase;
   const [adminToken, setAdminToken] = useState('');
-  const [activeCommentStudentId, setActiveCommentStudentId] = useState<string | null>(null);
+  const [activeCommentStudentId, setActiveCommentStudentId] = useState<
+    string | null
+  >(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTheme, setDrawerTheme] = useState<'light' | 'dark'>('light');
@@ -154,49 +166,254 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
   }, [fetchComments, fetchIntros]);
 
   useEffect(() => {
-    setIsMounted(true);
     refreshAll();
   }, [refreshAll]);
+
+  useEffect(() => {
+    if (!supabase || !selectedYear) {
+      return;
+    }
+
+    const introChannel = supabase
+      .channel(`work-intros-${selectedYear}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'work_intros',
+          filter: `year=eq.${selectedYear}`,
+        },
+        () => {
+          fetchIntros();
+        }
+      )
+      .subscribe();
+
+    const commentChannel = supabase
+      .channel(`work-comments-${selectedYear}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'work_comments',
+          filter: `year=eq.${selectedYear}`,
+        },
+        () => {
+          fetchComments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(introChannel);
+      supabase.removeChannel(commentChannel);
+    };
+  }, [fetchComments, fetchIntros, selectedYear, supabase]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !selectedYear) {
+      return;
+    }
+
+    const refresh = () => {
+      void refreshAll();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refresh();
+      }
+    };
+
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const intervalId = window.setInterval(refresh, SYNC_INTERVAL_MS);
+
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(intervalId);
+    };
+  }, [refreshAll, selectedYear]);
+
+  const submitComment = useCallback(
+    async (studentId: string, name: string, message: string) => {
+      if (!supabase || !selectedYear) {
+        throw new Error('Supabase is not configured.');
+      }
+
+      const { data, error } = await supabase
+        .from('work_comments')
+        .insert({
+          year: selectedYear,
+          student_id: studentId,
+          author_name: name.trim() ? name.trim() : null,
+          message,
+        })
+        .select('id,student_id,author_name,message,created_at');
+
+      if (error) {
+        throw new Error(formatSupabaseError(error));
+      }
+
+      const inserted = data?.[0];
+      if (inserted) {
+        setCommentMap((prev) => ({
+          ...prev,
+          [studentId]: [
+            {
+              id: inserted.id,
+              studentId: inserted.student_id,
+              authorName: inserted.author_name?.trim() || '匿名',
+              message: inserted.message,
+              createdAt: inserted.created_at,
+            },
+            ...(prev[studentId] ?? []),
+          ],
+        }));
+      }
+    },
+    [selectedYear, supabase]
+  );
+
+  const deleteComment = useCallback(
+    async (commentId: string, studentId: string) => {
+      if (!adminToken.trim()) {
+        throw new Error('管理者コードが未設定です。');
+      }
+
+      const response = await fetch(`/api/admin/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': adminToken.trim(),
+        },
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || '削除に失敗しました。');
+      }
+
+      setCommentMap((prev) => ({
+        ...prev,
+        [studentId]: (prev[studentId] ?? []).filter(
+          (comment) => comment.id !== commentId
+        ),
+      }));
+      await fetchComments();
+    },
+    [adminToken, fetchComments]
+  );
+
+  const saveIntro = useCallback(
+    async (studentId: string, intro: string | null) => {
+      if (!supabase || !selectedYear) {
+        throw new Error('Supabase is not configured.');
+      }
+
+      const { data, error } = await supabase
+        .from('work_intros')
+        .upsert({
+          year: selectedYear,
+          student_id: studentId,
+          intro,
+          updated_at: new Date().toISOString(),
+        })
+        .select('student_id,intro,updated_at');
+
+      if (error) {
+        throw new Error(formatSupabaseError(error));
+      }
+
+      const saved = data?.[0];
+      if (saved) {
+        setIntroMap((prev) => ({
+          ...prev,
+          [studentId]: saved.intro ?? undefined,
+        }));
+      }
+    },
+    [selectedYear, supabase]
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
+    const stored = window.sessionStorage.getItem('admin-comment-token');
+    if (stored) {
+      setAdminToken(stored);
+    }
+
     const handler = (event: Event) => {
-      if (!(event instanceof CustomEvent)) {
-        return;
-      }
-      const next = (event.detail as { token?: string } | null)?.token ?? '';
-      setAdminToken(next);
+      const detail = (event as CustomEvent).detail as { token?: string };
+      setAdminToken(detail?.token ?? '');
     };
 
-    window.addEventListener('admin-token', handler as EventListener);
+    window.addEventListener('admin-token', handler);
     return () => {
-      window.removeEventListener('admin-token', handler as EventListener);
+      window.removeEventListener('admin-token', handler);
     };
   }, []);
+
+  const activeCommentWork = activeCommentStudentId
+    ? studentWorksInYear.find(
+        (work) => work.studentId === activeCommentStudentId
+      )
+    : null;
+  const activeComments = activeCommentWork
+    ? commentMap[activeCommentWork.studentId] ?? []
+    : [];
 
   useEffect(() => {
     if (typeof document === 'undefined') {
       return;
     }
 
-    const updateTheme = () => {
-      const root = document.documentElement;
-      const dataTheme = root.getAttribute('data-theme');
-      setDrawerTheme(dataTheme === 'dark' ? 'dark' : 'light');
+    document.body.style.overflow = activeCommentWork ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeCommentWork]);
+
+  useEffect(() => {
+    if (!activeCommentWork) {
+      setIsDrawerOpen(false);
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActiveCommentStudentId(null);
+      }
     };
 
-    updateTheme();
-    const observer = new MutationObserver(() => updateTheme());
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme'],
-    });
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      observer.disconnect();
+      window.removeEventListener('keydown', handleKeyDown);
     };
+  }, [activeCommentWork]);
+
+  useEffect(() => {
+    if (!activeCommentWork) {
+      return;
+    }
+
+    setIsDrawerOpen(false);
+    const frameId = window.requestAnimationFrame(() => {
+      setIsDrawerOpen(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [activeCommentWork]);
+
+  useEffect(() => {
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
@@ -204,201 +421,202 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
       return;
     }
 
-    const handleVisibility = () => {
-      refreshAll();
-    };
-    window.addEventListener('focus', handleVisibility);
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      window.removeEventListener('focus', handleVisibility);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [refreshAll]);
+    const resolveTheme = () => {
+      const html = document.documentElement;
+      const body = document.body;
+      const dataTheme =
+        html.getAttribute('data-theme') ?? body.getAttribute('data-theme');
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      refreshAll();
-    }, 15000);
-    return () => window.clearInterval(interval);
-  }, [refreshAll]);
+      if (dataTheme === 'dark' || dataTheme === 'light') {
+        return dataTheme;
+      }
 
-  useEffect(() => {
-    if (!activeCommentStudentId) {
-      setIsDrawerOpen(false);
-      return;
+      if (html.classList.contains('dark') || body.classList.contains('dark')) {
+        return 'dark';
+      }
+
+      if (html.classList.contains('light') || body.classList.contains('light')) {
+        return 'light';
+      }
+
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    };
+
+    const updateTheme = () => {
+      setDrawerTheme(resolveTheme());
+    };
+
+    updateTheme();
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleMediaChange = () => updateTheme();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaChange);
+    } else {
+      mediaQuery.addListener(handleMediaChange);
     }
 
-    setIsDrawerOpen(false);
-    const timer = window.setTimeout(() => setIsDrawerOpen(true), 30);
-    return () => window.clearTimeout(timer);
-  }, [activeCommentStudentId]);
-
-  const saveIntro = useCallback(
-    async (studentId: string, intro: string | null) => {
-      if (!supabase || !selectedYear) {
-        return;
+    return () => {
+      observer.disconnect();
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleMediaChange);
+      } else {
+        mediaQuery.removeListener(handleMediaChange);
       }
-
-      const { error } = await supabase.from('work_intros').upsert({
-        year: selectedYear,
-        student_id: studentId,
-        intro,
-      });
-
-      if (error) {
-        setDataError(formatSupabaseError(error));
-        return;
-      }
-
-      await fetchIntros();
-    },
-    [fetchIntros, selectedYear, supabase]
-  );
-
-  const submitComment = useCallback(
-    async (studentId: string, authorName: string, message: string) => {
-      if (!supabase || !selectedYear) {
-        return;
-      }
-
-      const { error } = await supabase.from('work_comments').insert({
-        year: selectedYear,
-        student_id: studentId,
-        author_name: authorName || null,
-        message,
-      });
-
-      if (error) {
-        setDataError(formatSupabaseError(error));
-        return;
-      }
-
-      await fetchComments();
-    },
-    [fetchComments, selectedYear, supabase]
-  );
-
-  const deleteComment = useCallback(
-    async (commentId: string) => {
-      const trimmed = adminToken.trim();
-      if (!trimmed) {
-        return;
-      }
-
-      const res = await fetch(`/api/admin/comments/${commentId}`, {
-        method: 'DELETE',
-        headers: {
-          'x-admin-token': trimmed,
-        },
-      });
-
-      if (!res.ok) {
-        setDataError('削除に失敗しました。');
-        return;
-      }
-
-      await fetchComments();
-    },
-    [adminToken, fetchComments]
-  );
-
-  const activeCommentWork = activeCommentStudentId
-    ? studentWorksInYear.find((work) => work.studentId === activeCommentStudentId) ?? null
-    : null;
-  const activeComments = activeCommentWork ? commentMap[activeCommentWork.studentId] ?? [] : [];
+    };
+  }, []);
 
   return (
-    <main className={styles.submissionsRoot}>
-      <div className={styles.submissionsHeader}>
-        <h1 className={styles.submissionsTitle}>作品一覧</h1>
-        <div className={styles.yearSelector}>
-          <label className={styles.yearLabel}>
-            年度
-            <select value={selectedYear} onChange={handleYearChange} className={styles.yearSelect}>
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </div>
+    <main className={styles.submissionsMain}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>提出作品一覧</h1>
 
-      <div className={styles.submissionsContent}>
-        {studentWorksInYear.length === 0 ? (
-          <p className={styles.emptyMessage}>作品がありません。</p>
+        {availableYears.length === 0 ? (
+          <div className={styles.noData}>
+            <p>提出作品がまだありません。</p>
+          </div>
         ) : (
-          <div className={styles.cardsGrid}>
-            {studentWorksInYear.map((work) => {
-              const intro = introMap[work.studentId] ?? null;
-              const comments = commentMap[work.studentId] ?? [];
-              const workUrl = buildWorkUrl(worksBaseUrl, work.workPath);
-              return (
-                <div
-                  key={work.studentId}
-                  className={styles.card}
-                  data-testid={`work-card-${work.studentId}`}
-                >
-                  <div className={styles.cardHeader}>
-                    <h3 className={styles.cardTitle}>{work.studentId}</h3>
-                  </div>
-                  <div className={styles.cardPreview}>
-                    {workUrl ? (
-                      <iframe
-                        loading="lazy"
-                        title={`${work.studentId}の提出作品`}
-                        className={styles.iframe}
-                        src={workUrl}
-                        sandbox="allow-scripts allow-same-origin"
-                      />
-                    ) : (
-                      <div className={styles.iframePlaceholder}>
-                        <p>index.html が見つかりません。</p>
-                        <p>フォルダ内に配置してください。</p>
+          <>
+            <div className={styles.controls}>
+              <label htmlFor="year-select" className={styles.label}>
+                年度:
+              </label>
+              <select
+                id="year-select"
+                value={selectedYear}
+                onChange={handleYearChange}
+                className={styles.select}
+              >
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}年度
+                  </option>
+                ))}
+              </select>
+              <span className={styles.count}>
+                ({studentWorksInYear.length}件の提出)
+              </span>
+            </div>
+
+            {studentWorksInYear.length === 0 ? (
+              <div className={styles.noData}>
+                <p>{selectedYear}年度の提出作品がありません。</p>
+              </div>
+            ) : (
+              <div className={styles.grid}>
+                {studentWorksInYear.map((work) => {
+                  const workUrl = buildWorkUrl(worksBaseUrl, work.workPath);
+                  const intro = introMap[work.studentId];
+                  const comments = commentMap[work.studentId] ?? [];
+
+                  return (
+                    <div
+                      key={work.studentId}
+                      className={styles.card}
+                      data-testid={`work-card-${work.studentId}`}
+                    >
+                      <div className={styles.cardHeader}>
+                        <h3 className={styles.studentId}>{work.studentId}</h3>
                       </div>
-                    )}
-                  </div>
-                  <div className={styles.cardBody}>
-                    <section className={styles.introSection}>
-                      <h4 className={styles.sectionTitle}>作者からの紹介</h4>
-                      <div className={styles.contentBlock}>
-                        {supabaseMissing ? (
-                          <p className={styles.placeholder}>
-                            Supabaseのanon keyが未設定のため表示できません。
-                          </p>
-                        ) : intro ? (
-                          <p className={styles.introText} data-testid="work-intro-text">
-                            {intro}
-                          </p>
+                      <div
+                        className={`${styles.iframeWrapper} ${
+                          workUrl ? '' : styles.iframeWrapperDisabled
+                        }`}
+                        onClick={
+                          workUrl
+                            ? () => window.open(workUrl, '_blank')
+                            : undefined
+                        }
+                        style={{ cursor: workUrl ? 'pointer' : 'default' }}
+                        title={
+                          workUrl
+                            ? 'クリックして新しいタブで開く'
+                            : 'index.html が見つかりません'
+                        }
+                        data-testid={`work-preview-${work.studentId}`}
+                      >
+                        {workUrl ? (
+                          <iframe
+                            src={workUrl}
+                            className={styles.iframe}
+                            title={`${work.studentId}の提出作品`}
+                            loading="lazy"
+                            sandbox="allow-scripts allow-same-origin"
+                          />
                         ) : (
-                          <p className={styles.placeholder} data-testid="work-intro-empty">
-                            作者からの紹介文はまだありません。
-                          </p>
+                          <div className={styles.iframePlaceholder}>
+                            <p>index.html が見つかりません。</p>
+                            <p>フォルダ内に配置してください。</p>
+                          </div>
                         )}
                       </div>
-                      <WorkIntroEditor
-                        intro={intro}
-                        isDisabled={supabaseMissing}
-                        onSave={(nextIntro) => saveIntro(work.studentId, nextIntro)}
-                      />
-                    </section>
-                    <div className={styles.commentEntry}>
-                      <button
-                        type="button"
-                        className={styles.commentToggleButton}
-                        onClick={() => setActiveCommentStudentId(work.studentId)}
-                        data-testid="comment-open"
-                      >
-                        コメントを見る ({comments.length})
-                      </button>
+                      <div className={styles.cardBody}>
+                        <section className={styles.introSection}>
+                          <h4 className={styles.sectionTitle}>作者からの紹介</h4>
+                          <div className={styles.contentBlock}>
+                            {supabaseMissing ? (
+                              <p className={styles.placeholder}>
+                                Supabaseのanon keyが未設定のため表示できません。
+                              </p>
+                            ) : intro ? (
+                              <p
+                                className={styles.introText}
+                                data-testid="work-intro-text"
+                              >
+                                {intro}
+                              </p>
+                            ) : (
+                              <p
+                                className={styles.placeholder}
+                                data-testid="work-intro-empty"
+                              >
+                                作者からの紹介文はまだありません。
+                              </p>
+                            )}
+                          </div>
+                          <WorkIntroEditor
+                            intro={intro}
+                            isDisabled={supabaseMissing}
+                            onSave={(nextIntro) =>
+                              saveIntro(work.studentId, nextIntro)
+                            }
+                          />
+                        </section>
+                        <div className={styles.commentEntry}>
+                          <button
+                            type="button"
+                            className={styles.commentToggleButton}
+                            onClick={() =>
+                              setActiveCommentStudentId(work.studentId)
+                            }
+                            data-testid="comment-open"
+                          >
+                            コメントを見る ({comments.length})
+                          </button>
+                        </div>
+                        {dataError && (
+                          <p className={styles.dataError}>{dataError}</p>
+                        )}
+                      </div>
                     </div>
-                    {dataError && <p className={styles.dataError}>{dataError}</p>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -457,4 +675,3 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
     </main>
   );
 }
-

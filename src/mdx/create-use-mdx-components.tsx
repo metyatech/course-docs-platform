@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { MDXComponents } from 'nextra/mdx-components';
-import { CodePreview } from '@metyatech/code-preview/client';
+import { CodePreview } from '@metyatech/code-preview/server';
 import Exercise, { Solution } from '@metyatech/exercise/client';
 import { useMDXComponents as getThemeComponents } from 'nextra-theme-docs';
 import Admonition from './Admonition.js';
