@@ -30,7 +30,7 @@ test('question-spec markdown transforms into <Exercise> + <Solution>', async () 
   assert.equal(exercise.name, 'Exercise');
 
   const hasSolution = (exercise.children ?? []).some(
-    (child) => child?.type === 'mdxJsxFlowElement' && child?.name === 'Solution',
+    (child) => child?.type === 'mdxJsxFlowElement' && child?.name === 'Solution'
   );
   assert.equal(hasSolution, true);
 });
@@ -47,9 +47,7 @@ test('cloze replaces {{answer}} with ${answer} (and keeps escaped \\\\{{)', asyn
       { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
       {
         type: 'paragraph',
-        children: [
-          { type: 'text', value: 'A={{a}} / literal=\\{{b}} / C={{c}}' },
-        ],
+        children: [{ type: 'text', value: 'A={{a}} / literal=\\{{b}} / C={{c}}' }],
       },
       { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Explanation' }] },
       { type: 'paragraph', children: [{ type: 'text', value: 'X={{x}}' }] },
@@ -156,7 +154,7 @@ test('### Exam under Prompt becomes a tip admonition', async () => {
 
   const exercise = tree.children[0];
   const admonitions = (exercise.children ?? []).filter(
-    (child) => child?.type === 'mdxJsxFlowElement' && child?.name === 'Admonition',
+    (child) => child?.type === 'mdxJsxFlowElement' && child?.name === 'Admonition'
   );
 
   assert.equal(admonitions.length, 1);
@@ -175,7 +173,10 @@ test('non-qspec markdown under questions/ is not transformed', async () => {
     children: [
       { type: 'heading', depth: 1, children: [{ type: 'text', value: 'Not a question spec' }] },
       { type: 'heading', depth: 2, children: [{ type: 'text', value: 'Prompt' }] },
-      { type: 'paragraph', children: [{ type: 'text', value: 'Looks similar but should not transform.' }] },
+      {
+        type: 'paragraph',
+        children: [{ type: 'text', value: 'Looks similar but should not transform.' }],
+      },
     ],
   };
 

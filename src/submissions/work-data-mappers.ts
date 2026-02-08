@@ -32,4 +32,3 @@ export const mapWorkComments = (rows: WorkComment[]) =>
     acc[row.student_id] = bucket;
     return acc;
   }, {});
-

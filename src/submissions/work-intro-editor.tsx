@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import styles from './submissions.module.css';
@@ -10,11 +10,7 @@ type WorkIntroEditorProps = {
   onSave: (intro: string | null) => void | Promise<void>;
 };
 
-export default function WorkIntroEditor({
-  intro,
-  isDisabled,
-  onSave,
-}: WorkIntroEditorProps) {
+export default function WorkIntroEditor({ intro, isDisabled, onSave }: WorkIntroEditorProps) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(intro ?? '');
 
@@ -65,15 +61,10 @@ export default function WorkIntroEditor({
         >
           保存
         </button>
-        <button
-          type="button"
-          className={styles.introCancelButton}
-          onClick={() => setOpen(false)}
-        >
+        <button type="button" className={styles.introCancelButton} onClick={() => setOpen(false)}>
           キャンセル
         </button>
       </div>
     </div>
   );
 }
-

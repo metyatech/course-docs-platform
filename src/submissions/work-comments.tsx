@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { ShowMore } from '@re-dev/react-truncate';
 import { Info, Trash2 } from 'lucide-react';
@@ -147,4 +147,3 @@ export default function WorkComments({
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -90,7 +90,10 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
     }
   };
 
-  const studentWorksInYear = selectedYear ? studentWorksData[selectedYear] || [] : [];
+  const studentWorksInYear = useMemo(
+    () => (selectedYear ? studentWorksData[selectedYear] || [] : []),
+    [selectedYear, studentWorksData]
+  );
   const worksBaseUrl = process.env.NEXT_PUBLIC_WORKS_BASE_URL ?? '';
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const [introMap, setIntroMap] = useState<WorkIntroMap>({});
@@ -303,9 +306,9 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
   );
 
   const activeCommentWork = activeCommentStudentId
-    ? studentWorksInYear.find((work) => work.studentId === activeCommentStudentId) ?? null
+    ? (studentWorksInYear.find((work) => work.studentId === activeCommentStudentId) ?? null)
     : null;
-  const activeComments = activeCommentWork ? commentMap[activeCommentWork.studentId] ?? [] : [];
+  const activeComments = activeCommentWork ? (commentMap[activeCommentWork.studentId] ?? []) : [];
 
   return (
     <main className={styles.submissionsRoot}>
@@ -457,4 +460,3 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
     </main>
   );
 }
-

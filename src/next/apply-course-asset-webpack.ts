@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'node:path';
 
 type ApplyOptions = {
@@ -10,9 +11,7 @@ const normalizeBasePath = (basePath: string | undefined) => {
   if (!basePath) return '';
   const trimmed = basePath.trim();
   if (!trimmed || trimmed === '/') return '';
-  return trimmed.startsWith('/')
-    ? trimmed.replace(/\/+$/, '')
-    : `/${trimmed.replace(/\/+$/, '')}`;
+  return trimmed.startsWith('/') ? trimmed.replace(/\/+$/, '') : `/${trimmed.replace(/\/+$/, '')}`;
 };
 
 export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions) {
@@ -54,9 +53,7 @@ export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions)
         if (assetCssPattern.test(resourcePath)) return true;
         if (!existingExclude) return false;
         if (Array.isArray(existingExclude)) {
-          return existingExclude.some((exclude) =>
-            matchesExclude(exclude, resourcePath)
-          );
+          return existingExclude.some((exclude) => matchesExclude(exclude, resourcePath));
         }
         return matchesExclude(existingExclude, resourcePath);
       };
@@ -75,4 +72,3 @@ export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions)
 
   return config;
 }
-

@@ -1,6 +1,15 @@
+import type { Root } from 'mdast';
+import type { Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
 
 const SUPPORTED_TYPES = new Set(['tip', 'info', 'note', 'caution', 'danger']);
+
+interface DirectiveNode extends Parent {
+  type: 'containerDirective';
+  name: string;
+  label?: string;
+  attributes?: Record<string, string>;
+}
 
 const toMdxAttribute = (name: string, value: string) => ({
   type: 'mdxJsxAttribute',
@@ -9,25 +18,26 @@ const toMdxAttribute = (name: string, value: string) => ({
 });
 
 export default function remarkAdmonitionsToMdx() {
-  return function transform(tree: any) {
-    visit(tree, (node: any) => {
+  return function transform(tree: Root) {
+    visit(tree, (node: Node) => {
       if (node.type !== 'containerDirective') return;
-      if (!SUPPORTED_TYPES.has(node.name)) return;
+      const directive = node as DirectiveNode;
+      if (!SUPPORTED_TYPES.has(directive.name)) return;
 
-      const admonitionType = node.name;
+      const admonitionType = directive.name;
       const title =
-        typeof node.label === 'string' && node.label.trim().length > 0
-          ? node.label.trim()
+        typeof directive.label === 'string' && directive.label.trim().length > 0
+          ? directive.label.trim()
           : undefined;
 
-      node.type = 'mdxJsxFlowElement';
-      node.name = 'Admonition';
-      node.attributes = [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mdxNode = node as any;
+      mdxNode.type = 'mdxJsxFlowElement';
+      mdxNode.name = 'Admonition';
+      mdxNode.attributes = [
         toMdxAttribute('type', admonitionType),
         ...(title ? [toMdxAttribute('title', title)] : []),
       ];
-      node.children = node.children ?? [];
     });
   };
 }
-

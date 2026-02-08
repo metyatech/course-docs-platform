@@ -24,4 +24,17 @@ This repository is intended to be consumed by:
 ```bash
 npm install
 npm run build
+npm run lint
+npm run format
+npm test
 ```
+
+## Maintenance
+
+### CI
+
+This project uses GitHub Actions for continuous integration. The workflow is defined in `.github/workflows/ci.yml`.
+
+### Standards
+
+This project follows the standards defined in `AGENTS.md`.
