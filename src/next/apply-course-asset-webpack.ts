@@ -15,7 +15,10 @@ const normalizeBasePath = (basePath: string | undefined) => {
     : `/${trimmed.replace(/\/+$/, '')}`;
 };
 
-export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions) {
+export function applyCourseAssetWebpackRules(
+  config: any,
+  options: ApplyOptions
+) {
   const basePath = normalizeBasePath(options.basePath);
   const assetCssPattern = /[\\/]content[\\/].*[\\/]assets[\\/].*\.css$/i;
   const staticMediaFilename = 'static/media/[name].[hash][ext]';
@@ -75,4 +78,3 @@ export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions)
 
   return config;
 }
-

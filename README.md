@@ -1,27 +1,78 @@
-# course-docs-platform
+# @metyatech/course-docs-platform
 
-Shared, DRY building blocks for metyatech course documentation sites.
+Shared, DRY building blocks for metyatech course documentation sites based on Next.js and Nextra.
 
-This repository is intended to be consumed by:
+## Overview
 
-- `course-docs-site` (direct)
-- `javascript-course-docs` and `programming-course-docs` (indirect via `course-docs-site`)
-
-## What this provides
-
-- Shared Next/Nextra config helpers (MDX remark plugins, webpack asset rules).
-- Shared MDX components wiring for course sites.
-- Course site features (e.g. submissions page components and API routes).
-- Rendering conventions for question Markdown (see `docs/markdown-question-spec-course-docs-rendering.md`).
+This library provides shared components, MDX plugins, and configuration helpers to maintain consistency across various course documentation sites.
 
 ## Requirements
 
-- Node.js: `>=20`
-- Package manager: npm
+- **Node.js**: `>=20.0`
+- **Next.js**: `^15.x`
+- **Nextra**: `^4.x`
 
-## Development
+## Installation
 
 ```bash
-npm install
-npm run build
+npm install @metyatech/course-docs-platform
 ```
+
+## Usage
+
+### Next.js Configuration
+
+In your `next.config.js`:
+
+```javascript
+import { courseNext } from '@metyatech/course-docs-platform';
+
+const nextConfig = {
+  // ... your config
+  webpack: (config) => {
+    return courseNext.applyCourseAssetWebpack(config);
+  },
+};
+```
+
+### MDX Options
+
+In your `mdx-components.tsx` or Nextra config:
+
+```typescript
+import { courseNext } from '@metyatech/course-docs-platform';
+
+const mdxOptions = {
+  ...courseNext.courseMdxOptions,
+};
+```
+
+### Layouts (Next.js App Router)
+
+```typescript
+import { courseNextApp } from '@metyatech/course-docs-platform';
+
+export default courseNextApp.createRootLayout({
+  // options
+});
+```
+
+## Development Commands
+
+- `npm run build`: Build the project (TypeScript compilation + static asset copy).
+- `npm run test`: Run the test suite.
+- `npm run typecheck`: Run TypeScript type checking.
+- `npm run lint`: Run ESLint and type check.
+- `npm run format`: Format code using Prettier.
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on our development process.
+
+## Security
+
+Please see [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

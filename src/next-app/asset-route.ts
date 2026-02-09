@@ -52,7 +52,12 @@ const safeDecodeSegment = (segment: string) => {
   }
 };
 
-const allowedRoots = new Set(['docs', 'exams', 'layout-preview', 'submissions']);
+const allowedRoots = new Set([
+  'docs',
+  'exams',
+  'layout-preview',
+  'submissions',
+]);
 
 export const GET = async (
   request: Request,
@@ -64,7 +69,9 @@ export const GET = async (
     return new Response('Not Found', { status: 404 });
   }
 
-  const decodedSegments = assetPath.map((segment) => safeDecodeSegment(segment));
+  const decodedSegments = assetPath.map((segment) =>
+    safeDecodeSegment(segment)
+  );
   const relativeAssetPath = decodedSegments.join(path.sep);
   const resolvedPath = path.resolve(contentRoot, relativeAssetPath);
 

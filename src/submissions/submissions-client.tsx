@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -96,9 +96,9 @@ export default function SubmissionsClient({
     }
   };
 
-  const studentWorksInYear = selectedYear
-    ? studentWorksData[selectedYear] || []
-    : [];
+  const studentWorksInYear = useMemo(() => {
+    return selectedYear ? studentWorksData[selectedYear] || [] : [];
+  }, [selectedYear, studentWorksData]);
   const worksBaseUrl =
     process.env.NEXT_PUBLIC_WORKS_BASE_URL ??
     'https://metyatech.github.io/programming-course-docs';
@@ -365,7 +365,7 @@ export default function SubmissionsClient({
       )
     : null;
   const activeComments = activeCommentWork
-    ? commentMap[activeCommentWork.studentId] ?? []
+    ? (commentMap[activeCommentWork.studentId] ?? [])
     : [];
 
   useEffect(() => {
@@ -435,7 +435,10 @@ export default function SubmissionsClient({
         return 'dark';
       }
 
-      if (html.classList.contains('light') || body.classList.contains('light')) {
+      if (
+        html.classList.contains('light') ||
+        body.classList.contains('light')
+      ) {
         return 'light';
       }
 
@@ -565,7 +568,9 @@ export default function SubmissionsClient({
                       </div>
                       <div className={styles.cardBody}>
                         <section className={styles.introSection}>
-                          <h4 className={styles.sectionTitle}>作者からの紹介</h4>
+                          <h4 className={styles.sectionTitle}>
+                            作者からの紹介
+                          </h4>
                           <div className={styles.contentBlock}>
                             {supabaseMissing ? (
                               <p className={styles.placeholder}>

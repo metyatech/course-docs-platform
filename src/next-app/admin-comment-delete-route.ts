@@ -30,10 +30,16 @@ export async function DELETE(
 
   const supabase = getAdminSupabase();
   if (!supabase) {
-    return NextResponse.json({ error: 'Server not configured' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Server not configured' },
+      { status: 500 }
+    );
   }
 
-  const { error } = await supabase.from('work_comments').delete().eq('id', commentId);
+  const { error } = await supabase
+    .from('work_comments')
+    .delete()
+    .eq('id', commentId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -41,4 +47,3 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
-

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { ShowMore } from '@re-dev/react-truncate';
 import { Info, Trash2 } from 'lucide-react';
@@ -136,9 +136,7 @@ export default function WorkComments({
                 type="text"
                 value={name}
                 onChange={(event) =>
-                  handleNameChange(
-                    event.target.value.slice(0, MAX_NAME_LENGTH)
-                  )
+                  handleNameChange(event.target.value.slice(0, MAX_NAME_LENGTH))
                 }
                 className={styles.commentNameInput}
                 placeholder="例: たろう"
@@ -195,7 +193,10 @@ export default function WorkComments({
 
               return (
                 <li key={comment.id} className={styles.commentItem}>
-                  <div className={styles.commentBody} data-testid="comment-body">
+                  <div
+                    className={styles.commentBody}
+                    data-testid="comment-body"
+                  >
                     <ShowMore
                       lines={shouldClamp ? 6 : 0}
                       more="続きを読む"
@@ -229,7 +230,9 @@ export default function WorkComments({
                       <button
                         type="button"
                         className={styles.commentDeleteButton}
-                        onClick={() => handleDelete(comment.id, comment.studentId)}
+                        onClick={() =>
+                          handleDelete(comment.id, comment.studentId)
+                        }
                         aria-label="コメントを削除"
                         data-testid="comment-delete"
                       >

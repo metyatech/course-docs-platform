@@ -4,7 +4,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const projectRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..'
+);
 
 const read = async (relativePath) =>
   fs.readFile(path.join(projectRoot, relativePath), 'utf8');
@@ -24,5 +27,8 @@ test('comment author tooltip is shown per row only', async () => {
   assert.doesNotMatch(commentsSource, /nameVisible/);
   assert.match(commentsSource, /styles\.commentAuthorName/);
   assert.match(cssSource, /\.commentAuthorToggle:hover ~ \.commentAuthorName/);
-  assert.match(cssSource, /\.commentAuthorToggle:focus-visible ~ \.commentAuthorName/);
+  assert.match(
+    cssSource,
+    /\.commentAuthorToggle:focus-visible ~ \.commentAuthorName/
+  );
 });

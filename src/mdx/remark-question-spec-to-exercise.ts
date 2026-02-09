@@ -29,7 +29,7 @@ const replaceClozeMarkers = (value: string) => {
   const withEscapesProtected = value.replaceAll('\\{{', escapedOpenPlaceholder);
   const withClozeConverted = withEscapesProtected.replace(
     /\{\{([^}]+)\}\}/g,
-    (_match, inner) => `\${${String(inner)}}`,
+    (_match, inner) => `\${${String(inner)}}`
   );
   return withClozeConverted.replaceAll(escapedOpenPlaceholder, '{{');
 };
@@ -46,9 +46,7 @@ const applyClozeConversion = (nodes: any[]) => {
 const sanitizeIdPart = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return '';
-  return trimmed
-    .replace(/\s+/g, '-')
-    .replace(/[^\p{L}\p{N}_-]/gu, '');
+  return trimmed.replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
 };
 
 const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
@@ -121,7 +119,7 @@ const splitExamTip = (promptNodes: any[]) => {
 const createMdxFlowElement = (
   name: string,
   attributes: any[],
-  children: any[],
+  children: any[]
 ) => ({
   type: 'mdxJsxFlowElement',
   name,
@@ -132,12 +130,12 @@ const createMdxFlowElement = (
 const createAdmonition = (
   type: 'tip' | 'info',
   title: string,
-  children: any[],
+  children: any[]
 ) =>
   createMdxFlowElement(
     'Admonition',
     [toMdxAttribute('type', type), toMdxAttribute('title', title)],
-    children,
+    children
   );
 
 export default function remarkQuestionSpecToExercise() {
@@ -152,13 +150,15 @@ export default function remarkQuestionSpecToExercise() {
 
     if (children[0]?.type === 'yaml' || children[0]?.type === 'toml') {
       throw new Error(
-        `Question spec markdown must not include frontmatter: ${filePath}`,
+        `Question spec markdown must not include frontmatter: ${filePath}`
       );
     }
 
     const titleHeading = children[0];
     if (!isHeading(titleHeading, 1)) {
-      throw new Error(`Question spec markdown must start with "# <title>": ${filePath}`);
+      throw new Error(
+        `Question spec markdown must start with "# <title>": ${filePath}`
+      );
     }
     const title = normalizeHeadingText(titleHeading);
     if (!title) {

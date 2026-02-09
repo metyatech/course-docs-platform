@@ -2,7 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import type { StudentWorkEntry, StudentWorksData } from './types.js';
 
-const studentWorksBasePath = path.join(process.cwd(), 'public', 'student-works');
+const studentWorksBasePath = path.join(
+  process.cwd(),
+  'public',
+  'student-works'
+);
 const ignoredDirectories = new Set(['.git', 'node_modules']);
 
 const normalizePath = (value: string) => value.split(path.sep).join('/');
@@ -16,7 +20,10 @@ const getWorksIndexUrlFromEnv = (): string | null => {
   return `${trimmed}/works-index.json`;
 };
 
-const findIndexHtmlPath = (studentPath: string, basePath: string): string | null => {
+const findIndexHtmlPath = (
+  studentPath: string,
+  basePath: string
+): string | null => {
   if (!fs.existsSync(studentPath)) {
     return null;
   }
@@ -45,7 +52,10 @@ const findIndexHtmlPath = (studentPath: string, basePath: string): string | null
         }
 
         if (entry.isDirectory()) {
-          if (entry.name.startsWith('.') || ignoredDirectories.has(entry.name)) {
+          if (
+            entry.name.startsWith('.') ||
+            ignoredDirectories.has(entry.name)
+          ) {
             continue;
           }
           nextLevel.push(path.join(dir, entry.name));
@@ -64,7 +74,9 @@ const findIndexHtmlPath = (studentPath: string, basePath: string): string | null
   return null;
 };
 
-const getStudentWorksDataFromFs = (basePath = studentWorksBasePath): StudentWorksData => {
+const getStudentWorksDataFromFs = (
+  basePath = studentWorksBasePath
+): StudentWorksData => {
   if (!fs.existsSync(basePath)) {
     return { years: {} };
   }
@@ -140,7 +152,9 @@ const coerceStudentWorksData = (value: unknown): StudentWorksData | null => {
   return { years };
 };
 
-const getStudentWorksDataFromRemoteIndex = async (indexUrl: string): Promise<StudentWorksData | null> => {
+const getStudentWorksDataFromRemoteIndex = async (
+  indexUrl: string
+): Promise<StudentWorksData | null> => {
   try {
     const res = await fetch(indexUrl, { cache: 'no-store' });
     if (!res.ok) {
@@ -160,7 +174,9 @@ const getStudentWorksDataFromRemoteIndex = async (indexUrl: string): Promise<Stu
   }
 };
 
-export const getStudentWorksData = async (basePath = studentWorksBasePath): Promise<StudentWorksData> => {
+export const getStudentWorksData = async (
+  basePath = studentWorksBasePath
+): Promise<StudentWorksData> => {
   if (fs.existsSync(basePath)) {
     return getStudentWorksDataFromFs(basePath);
   }

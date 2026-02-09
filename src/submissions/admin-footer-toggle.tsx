@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import styles from './submissions.module.css';
@@ -25,7 +25,9 @@ export default function AdminFooterToggle({ onOpen }: AdminFooterToggleProps) {
     } else {
       window.sessionStorage.removeItem('admin-comment-token');
     }
-    window.dispatchEvent(new CustomEvent('admin-token', { detail: { token: trimmed } }));
+    window.dispatchEvent(
+      new CustomEvent('admin-token', { detail: { token: trimmed } })
+    );
     setOpen(false);
   };
 
@@ -62,7 +64,11 @@ export default function AdminFooterToggle({ onOpen }: AdminFooterToggleProps) {
               }}
             />
           </label>
-          <button type="button" className={styles.adminFooterSave} onClick={handleSave}>
+          <button
+            type="button"
+            className={styles.adminFooterSave}
+            onClick={handleSave}
+          >
             保存
           </button>
         </div>
@@ -70,4 +76,3 @@ export default function AdminFooterToggle({ onOpen }: AdminFooterToggleProps) {
     </div>
   );
 }
-
