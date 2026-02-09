@@ -46,9 +46,7 @@ const applyClozeConversion = (nodes: any[]) => {
 const sanitizeIdPart = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return '';
-  return trimmed
-    .replace(/\s+/g, '-')
-    .replace(/[^\p{L}\p{N}_-]/gu, '');
+  return trimmed.replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
 };
 
 const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
@@ -118,22 +116,14 @@ const splitExamTip = (promptNodes: any[]) => {
   return { promptNodes: remaining, examTipNodes: tipChildren };
 };
 
-const createMdxFlowElement = (
-  name: string,
-  attributes: any[],
-  children: any[],
-) => ({
+const createMdxFlowElement = (name: string, attributes: any[], children: any[]) => ({
   type: 'mdxJsxFlowElement',
   name,
   attributes,
   children,
 });
 
-const createAdmonition = (
-  type: 'tip' | 'info',
-  title: string,
-  children: any[],
-) =>
+const createAdmonition = (type: 'tip' | 'info', title: string, children: any[]) =>
   createMdxFlowElement(
     'Admonition',
     [toMdxAttribute('type', type), toMdxAttribute('title', title)],
@@ -142,8 +132,7 @@ const createAdmonition = (
 
 export default function remarkQuestionSpecToExercise() {
   return function transform(tree: any, file: any) {
-    const filePath =
-      typeof file?.path === 'string' ? file.path.replaceAll('\\', '/') : '';
+    const filePath = typeof file?.path === 'string' ? file.path.replaceAll('\\', '/') : '';
     const isQuestionSpec = filePath.endsWith('.qspec.md');
     if (!isQuestionSpec) return;
 
@@ -151,9 +140,7 @@ export default function remarkQuestionSpecToExercise() {
     if (children.length === 0) return;
 
     if (children[0]?.type === 'yaml' || children[0]?.type === 'toml') {
-      throw new Error(
-        `Question spec markdown must not include frontmatter: ${filePath}`,
-      );
+      throw new Error(`Question spec markdown must not include frontmatter: ${filePath}`);
     }
 
     const titleHeading = children[0];
@@ -226,9 +213,7 @@ export default function remarkQuestionSpecToExercise() {
     const exerciseChildren: any[] = [
       ...promptNodes,
       ...(optionsSection.length > 0 ? optionsSection : []),
-      ...(examTipNodes.length > 0
-        ? [createAdmonition('tip', '本試験では', examTipNodes)]
-        : []),
+      ...(examTipNodes.length > 0 ? [createAdmonition('tip', '本試験では', examTipNodes)] : []),
       ...(scoringItems.length > 0
         ? [
             createAdmonition('info', '採点基準・配点', [
@@ -263,8 +248,6 @@ export default function remarkQuestionSpecToExercise() {
       ...(isCloze ? [toMdxBooleanAttribute('enableBlanks')] : []),
     ];
 
-    tree.children = [
-      createMdxFlowElement('Exercise', exerciseAttributes, exerciseChildren),
-    ];
+    tree.children = [createMdxFlowElement('Exercise', exerciseAttributes, exerciseChildren)];
   };
 }

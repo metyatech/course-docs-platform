@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import styles from './submissions.module.css';
@@ -14,6 +14,7 @@ export default function AdminFooterToggle({ onOpen }: AdminFooterToggleProps) {
   useEffect(() => {
     const stored = window.sessionStorage.getItem('admin-comment-token');
     if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToken(stored);
     }
   }, []);
@@ -70,4 +71,3 @@ export default function AdminFooterToggle({ onOpen }: AdminFooterToggleProps) {
     </div>
   );
 }
-
