@@ -1,29 +1,69 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { visit } from 'unist-util-visit';
+import type { Node } from 'unist';
 
-const toMdxAttribute = (name: string, value: string) => ({
+type AstNode = Node & Record<string, unknown>;
+
+type HeadingNode = AstNode & {
+  type: 'heading';
+  depth: number;
+};
+
+type MdxJsxAttribute = AstNode & {
+  type: 'mdxJsxAttribute';
+  name: string;
+  value: string | null;
+};
+
+type MdxJsxFlowElement = AstNode & {
+  type: 'mdxJsxFlowElement';
+  name: string;
+  attributes: MdxJsxAttribute[];
+  children: AstNode[];
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isAstNode = (value: unknown): value is AstNode =>
+  isRecord(value) && typeof value['type'] === 'string';
+
+const toAstNodeArray = (value: unknown): AstNode[] =>
+  Array.isArray(value) ? value.filter(isAstNode) : [];
+
+const toMdxAttribute = (name: string, value: string): MdxJsxAttribute => ({
   type: 'mdxJsxAttribute',
   name,
   value,
 });
 
-const toMdxBooleanAttribute = (name: string) => ({
+const toMdxBooleanAttribute = (name: string): MdxJsxAttribute => ({
   type: 'mdxJsxAttribute',
   name,
   value: null,
 });
 
-const isHeading = (node: any, depth?: number) =>
-  node?.type === 'heading' && (depth == null || node.depth === depth);
+const isHeading = (node: unknown, depth?: number): node is HeadingNode => {
+  if (!isRecord(node)) return false;
+  if (node['type'] !== 'heading') return false;
 
-const getText = (node: any): string => {
-  if (!node) return '';
-  if (typeof node.value === 'string') return node.value;
-  if (Array.isArray(node.children)) return node.children.map(getText).join('');
+  const nodeDepth = node['depth'];
+  if (typeof nodeDepth !== 'number') return false;
+
+  return depth == null || nodeDepth === depth;
+};
+
+const getText = (node: unknown): string => {
+  if (!isRecord(node)) return '';
+
+  const value = node['value'];
+  if (typeof value === 'string') return value;
+
+  const children = node['children'];
+  if (Array.isArray(children)) return children.map(getText).join('');
   return '';
 };
 
-const normalizeHeadingText = (node: any) => getText(node).trim();
+const normalizeHeadingText = (node: unknown) => getText(node).trim();
 
 const replaceClozeMarkers = (value: string) => {
   const escapedOpenPlaceholder = '__CLOZE_ESCAPED_OPEN__';
@@ -35,11 +75,24 @@ const replaceClozeMarkers = (value: string) => {
   return withClozeConverted.replaceAll(escapedOpenPlaceholder, '{{');
 };
 
-const applyClozeConversion = (nodes: any[]) => {
-  const root = { type: 'root', children: nodes };
-  visit(root, (node: any) => {
-    if (!['text', 'code', 'inlineCode'].includes(node.type)) return;
-    if (typeof node.value !== 'string') return;
+type TextLikeNode = AstNode & {
+  type: 'text' | 'code' | 'inlineCode';
+  value: string;
+};
+
+const isTextLikeNode = (node: unknown): node is TextLikeNode => {
+  if (!isRecord(node)) return false;
+
+  const type = node['type'];
+  if (type !== 'text' && type !== 'code' && type !== 'inlineCode') return false;
+
+  return typeof node['value'] === 'string';
+};
+
+const applyClozeConversion = (nodes: AstNode[]) => {
+  const root: AstNode = { type: 'root', children: nodes };
+  visit(root, (node) => {
+    if (!isTextLikeNode(node)) return;
     node.value = replaceClozeMarkers(node.value);
   });
 };
@@ -50,13 +103,13 @@ const sanitizeIdPart = (value: string) => {
   return trimmed.replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
 };
 
-const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
-  const root = { type: 'root', children: nodes };
+const applyHeadingIdPrefix = (nodes: AstNode[], idPrefix: string) => {
+  const root: AstNode = { type: 'root', children: nodes };
   const counts = new Map<string, number>();
 
-  visit(root, (node: any) => {
+  visit(root, (node) => {
     if (!isHeading(node)) return;
-    if (typeof node.depth !== 'number' || node.depth < 3) return;
+    if (node.depth < 3) return;
 
     const text = normalizeHeadingText(node);
     const slug = sanitizeIdPart(text) || 'section';
@@ -66,17 +119,23 @@ const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
 
     const id = prev === 0 ? baseId : `${baseId}-${prev}`;
 
-    node.data = node.data ?? {};
-    node.data.hProperties = {
-      ...(node.data.hProperties ?? {}),
+    const dataRaw = node['data'];
+    const data = isRecord(dataRaw) ? dataRaw : {};
+    node['data'] = data;
+
+    const hPropertiesRaw = data['hProperties'];
+    const hProperties = isRecord(hPropertiesRaw) ? hPropertiesRaw : {};
+
+    data['hProperties'] = {
+      ...hProperties,
       id,
     };
   });
 };
 
-const parseScoringLines = (nodes: any[]) => {
+const parseScoringLines = (nodes: AstNode[]) => {
   const raw = nodes
-    .map((node) => getText(node))
+    .map(getText)
     .join('\n')
     .split('\n')
     .map((line) => line.trim())
@@ -91,9 +150,9 @@ const parseScoringLines = (nodes: any[]) => {
   return items;
 };
 
-const splitExamTip = (promptNodes: any[]) => {
-  const remaining: any[] = [];
-  const tipChildren: any[] = [];
+const splitExamTip = (promptNodes: AstNode[]) => {
+  const remaining: AstNode[] = [];
+  const tipChildren: AstNode[] = [];
 
   let i = 0;
   while (i < promptNodes.length) {
@@ -117,14 +176,18 @@ const splitExamTip = (promptNodes: any[]) => {
   return { promptNodes: remaining, examTipNodes: tipChildren };
 };
 
-const createMdxFlowElement = (name: string, attributes: any[], children: any[]) => ({
+const createMdxFlowElement = (
+  name: string,
+  attributes: MdxJsxAttribute[],
+  children: AstNode[]
+): MdxJsxFlowElement => ({
   type: 'mdxJsxFlowElement',
   name,
   attributes,
   children,
 });
 
-const createAdmonition = (type: 'tip' | 'info', title: string, children: any[]) =>
+const createAdmonition = (type: 'tip' | 'info', title: string, children: AstNode[]) =>
   createMdxFlowElement(
     'Admonition',
     [toMdxAttribute('type', type), toMdxAttribute('title', title)],
@@ -132,12 +195,15 @@ const createAdmonition = (type: 'tip' | 'info', title: string, children: any[]) 
   );
 
 export default function remarkQuestionSpecToExercise() {
-  return function transform(tree: any, file: any) {
-    const filePath = typeof file?.path === 'string' ? file.path.replaceAll('\\', '/') : '';
+  return function transform(tree: unknown, file: unknown) {
+    const filePath =
+      isRecord(file) && typeof file['path'] === 'string' ? file['path'].replaceAll('\\', '/') : '';
     const isQuestionSpec = filePath.endsWith('.qspec.md');
     if (!isQuestionSpec) return;
 
-    const children: any[] = Array.isArray(tree?.children) ? tree.children : [];
+    if (!isRecord(tree)) return;
+
+    const children = toAstNodeArray(tree['children']);
     if (children.length === 0) return;
 
     if (children[0]?.type === 'yaml' || children[0]?.type === 'toml') {
@@ -153,7 +219,7 @@ export default function remarkQuestionSpecToExercise() {
       throw new Error(`Question spec title must not be empty: ${filePath}`);
     }
 
-    const sections = new Map<string, any[]>();
+    const sections = new Map<string, AstNode[]>();
     let currentSection: string | null = null;
 
     for (const node of children.slice(1)) {
@@ -211,7 +277,7 @@ export default function remarkQuestionSpecToExercise() {
     applyHeadingIdPrefix(optionsSection, idPrefix);
     applyHeadingIdPrefix(explanationSection, idPrefix);
 
-    const exerciseChildren: any[] = [
+    const exerciseChildren: AstNode[] = [
       ...promptNodes,
       ...(optionsSection.length > 0 ? optionsSection : []),
       ...(examTipNodes.length > 0 ? [createAdmonition('tip', '本試験では', examTipNodes)] : []),
@@ -249,6 +315,6 @@ export default function remarkQuestionSpecToExercise() {
       ...(isCloze ? [toMdxBooleanAttribute('enableBlanks')] : []),
     ];
 
-    tree.children = [createMdxFlowElement('Exercise', exerciseAttributes, exerciseChildren)];
+    tree['children'] = [createMdxFlowElement('Exercise', exerciseAttributes, exerciseChildren)];
   };
 }
