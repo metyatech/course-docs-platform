@@ -96,9 +96,10 @@ export default function SubmissionsClient({
     }
   };
 
-  const studentWorksInYear = selectedYear
-    ? studentWorksData[selectedYear] || []
-    : [];
+  const studentWorksInYear = useMemo(
+    () => (selectedYear ? studentWorksData[selectedYear] || [] : []),
+    [selectedYear, studentWorksData]
+  );
   const worksBaseUrl =
     process.env.NEXT_PUBLIC_WORKS_BASE_URL ??
     'https://metyatech.github.io/programming-course-docs';

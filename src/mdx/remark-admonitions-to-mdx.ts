@@ -1,4 +1,5 @@
 import { visit } from 'unist-util-visit';
+import type { Root } from 'mdast';
 
 const SUPPORTED_TYPES = new Set(['tip', 'info', 'note', 'caution', 'danger']);
 
@@ -9,7 +10,7 @@ const toMdxAttribute = (name: string, value: string) => ({
 });
 
 export default function remarkAdmonitionsToMdx() {
-  return function transform(tree: any) {
+  return function transform(tree: Root) {
     visit(tree, (node: any) => {
       if (node.type !== 'containerDirective') return;
       if (!SUPPORTED_TYPES.has(node.name)) return;
