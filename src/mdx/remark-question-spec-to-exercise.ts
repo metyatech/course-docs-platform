@@ -1,5 +1,6 @@
 import path from 'path';
 import { visit } from 'unist-util-visit';
+import type { Root, Node, Heading, Text } from 'mdast';
 
 const toMdxAttribute = (name: string, value: string) => ({
   type: 'mdxJsxAttribute',
@@ -13,17 +14,19 @@ const toMdxBooleanAttribute = (name: string) => ({
   value: null,
 });
 
-const isHeading = (node: any, depth?: number) =>
-  node?.type === 'heading' && (depth == null || node.depth === depth);
+const isHeading = (node: Node | null | undefined, depth?: number): node is Heading =>
+  node?.type === 'heading' && (depth == null || (node as Heading).depth === depth);
 
-const getText = (node: any): string => {
+const getText = (node: Node | null | undefined): string => {
   if (!node) return '';
-  if (typeof node.value === 'string') return node.value;
-  if (Array.isArray(node.children)) return node.children.map(getText).join('');
+  if ('value' in node && typeof node.value === 'string') return node.value;
+  if ('children' in node && Array.isArray(node.children)) {
+    return (node.children as Node[]).map(getText).join('');
+  }
   return '';
 };
 
-const normalizeHeadingText = (node: any) => getText(node).trim();
+const normalizeHeadingText = (node: Node) => getText(node).trim();
 
 const ABSOLUTE_PROTOCOL_PATTERN = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
 const CONTENT_ROOT_MARKER = '/content/';
@@ -85,12 +88,12 @@ const resolveQuestionSpecRelativeUrl = (url: string, filePath: string) => {
   return `/${resolvedRelativePath}${suffix}`;
 };
 
-const rewriteRelativeAssetUrls = (nodes: any[], filePath: string) => {
-  const root = { type: 'root', children: nodes };
-  visit(root, (node: any) => {
-    if (typeof node?.url !== 'string') return;
-    const resolved = resolveQuestionSpecRelativeUrl(node.url, filePath);
-    if (resolved) node.url = resolved;
+const rewriteRelativeAssetUrls = (nodes: Node[], filePath: string) => {
+  const root: Root = { type: 'root', children: nodes as any };
+  visit(root, (node: Node) => {
+    if (typeof (node as any)?.url !== 'string') return;
+    const resolved = resolveQuestionSpecRelativeUrl((node as any).url, filePath);
+    if (resolved) (node as any).url = resolved;
   });
 };
 
@@ -104,12 +107,13 @@ const replaceClozeMarkers = (value: string) => {
   return withClozeConverted.replaceAll(escapedOpenPlaceholder, '{{');
 };
 
-const applyClozeConversion = (nodes: any[]) => {
-  const root = { type: 'root', children: nodes };
-  visit(root, (node: any) => {
+const applyClozeConversion = (nodes: Node[]) => {
+  const root: Root = { type: 'root', children: nodes as any };
+  visit(root, (node: Node) => {
     if (!['text', 'code', 'inlineCode'].includes(node.type)) return;
-    if (typeof node.value !== 'string') return;
-    node.value = replaceClozeMarkers(node.value);
+    if ('value' in node && typeof node.value === 'string') {
+      (node as Text).value = replaceClozeMarkers(node.value as string);
+    }
   });
 };
 
@@ -119,11 +123,11 @@ const sanitizeIdPart = (value: string) => {
   return trimmed.replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
 };
 
-const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
-  const root = { type: 'root', children: nodes };
+const applyHeadingIdPrefix = (nodes: Node[], idPrefix: string) => {
+  const root: Root = { type: 'root', children: nodes as any };
   const counts = new Map<string, number>();
 
-  visit(root, (node: any) => {
+  visit(root, (node: Node) => {
     if (!isHeading(node)) return;
     if (typeof node.depth !== 'number' || node.depth < 3) return;
 
@@ -135,15 +139,15 @@ const applyHeadingIdPrefix = (nodes: any[], idPrefix: string) => {
 
     const id = prev === 0 ? baseId : `${baseId}-${prev}`;
 
-    node.data = node.data ?? {};
-    node.data.hProperties = {
-      ...(node.data.hProperties ?? {}),
+    const data = (node.data = node.data ?? {});
+    data.hProperties = {
+      ...((data.hProperties as Record<string, any>) ?? {}),
       id,
     };
   });
 };
 
-const parseScoringLines = (nodes: any[]) => {
+const parseScoringLines = (nodes: Node[]) => {
   const raw = nodes
     .map((node) => getText(node))
     .join('\n')
@@ -160,9 +164,9 @@ const parseScoringLines = (nodes: any[]) => {
   return items;
 };
 
-const splitExamTip = (promptNodes: any[]) => {
-  const remaining: any[] = [];
-  const tipChildren: any[] = [];
+const splitExamTip = (promptNodes: Node[]) => {
+  const remaining: Node[] = [];
+  const tipChildren: Node[] = [];
 
   let i = 0;
   while (i < promptNodes.length) {
@@ -186,14 +190,14 @@ const splitExamTip = (promptNodes: any[]) => {
   return { promptNodes: remaining, examTipNodes: tipChildren };
 };
 
-const createMdxFlowElement = (name: string, attributes: any[], children: any[]) => ({
+const createMdxFlowElement = (name: string, attributes: any[], children: Node[]) => ({
   type: 'mdxJsxFlowElement',
   name,
   attributes,
   children,
 });
 
-const createAdmonition = (type: 'tip' | 'info', title: string, children: any[]) =>
+const createAdmonition = (type: 'tip' | 'info', title: string, children: Node[]) =>
   createMdxFlowElement(
     'Admonition',
     [toMdxAttribute('type', type), toMdxAttribute('title', title)],
@@ -201,12 +205,13 @@ const createAdmonition = (type: 'tip' | 'info', title: string, children: any[]) 
   );
 
 export default function remarkQuestionSpecToExercise() {
-  return function transform(tree: any, file: any) {
-    const filePath = typeof file?.path === 'string' ? file.path.replaceAll('\\', '/') : '';
+  return function transform(tree: Root, file: any) {
+    const filePath =
+      typeof file?.path === 'string' ? (file.path as string).replaceAll('\\', '/') : '';
     const isQuestionSpec = filePath.endsWith('.qspec.md');
     if (!isQuestionSpec) return;
 
-    const children: any[] = Array.isArray(tree?.children) ? tree.children : [];
+    const children: Node[] = Array.isArray(tree?.children) ? tree.children : [];
     if (children.length === 0) return;
 
     if (children[0]?.type === 'yaml' || children[0]?.type === 'toml') {
@@ -222,7 +227,7 @@ export default function remarkQuestionSpecToExercise() {
       throw new Error(`Question spec title must not be empty: ${filePath}`);
     }
 
-    const sections = new Map<string, any[]>();
+    const sections = new Map<string, Node[]>();
     let currentSection: string | null = null;
 
     for (const node of children.slice(1)) {
@@ -285,10 +290,12 @@ export default function remarkQuestionSpecToExercise() {
     applyHeadingIdPrefix(optionsSection, idPrefix);
     applyHeadingIdPrefix(explanationSection, idPrefix);
 
-    const exerciseChildren: any[] = [
+    const exerciseChildren: Node[] = [
       ...promptNodes,
       ...(optionsSection.length > 0 ? optionsSection : []),
-      ...(examTipNodes.length > 0 ? [createAdmonition('tip', '本試験では', examTipNodes)] : []),
+      ...(examTipNodes.length > 0
+        ? [createAdmonition('tip', '本試験では', examTipNodes) as any]
+        : []),
       ...(scoringItems.length > 0
         ? [
             createAdmonition('info', '採点基準・配点', [
@@ -311,11 +318,11 @@ export default function remarkQuestionSpecToExercise() {
                     },
                   ],
                 })),
-              },
-            ]),
+              } as Node,
+            ]) as any,
           ]
         : []),
-      createMdxFlowElement('Solution', [], explanationSection),
+      createMdxFlowElement('Solution', [], explanationSection) as any,
     ];
 
     const exerciseAttributes = [
@@ -323,6 +330,6 @@ export default function remarkQuestionSpecToExercise() {
       ...(isCloze ? [toMdxBooleanAttribute('enableBlanks')] : []),
     ];
 
-    tree.children = [createMdxFlowElement('Exercise', exerciseAttributes, exerciseChildren)];
+    tree.children = [createMdxFlowElement('Exercise', exerciseAttributes, exerciseChildren) as any];
   };
 }

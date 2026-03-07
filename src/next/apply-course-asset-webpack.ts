@@ -20,7 +20,7 @@ export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions)
   const staticMediaPublicPath = `${basePath}/_next/`;
   const nextOutputRoot = path.join(options.projectRoot, '.next');
   const staticMediaOutputPath = options.isServer
-    ? path.relative(config.output.path, nextOutputRoot)
+    ? path.relative(config.output.path as string, nextOutputRoot)
     : undefined;
 
   config.module.rules.unshift({
@@ -33,17 +33,17 @@ export function applyCourseAssetWebpackRules(config: any, options: ApplyOptions)
     },
   });
 
-  const matchesExclude = (exclude: any, resourcePath: string) => {
+  const matchesExclude = (exclude: unknown, resourcePath: string) => {
     if (!exclude) return false;
     if (exclude instanceof RegExp) return exclude.test(resourcePath);
     if (typeof exclude === 'function') return exclude(resourcePath);
     return false;
   };
 
-  for (const rule of config.module.rules) {
+  for (const rule of config.module.rules as any[]) {
     if (!rule.oneOf) continue;
 
-    for (const oneOfRule of rule.oneOf) {
+    for (const oneOfRule of rule.oneOf as any[]) {
       if (!(oneOfRule.test instanceof RegExp)) continue;
       if (!oneOfRule.test.test('test.css')) continue;
 

@@ -7,7 +7,16 @@ import pluginPrettier from 'eslint-plugin-prettier/recommended';
 
 export default [
   {
-    ignores: ['dist/', 'node_modules/', '.next/', 'coverage/', 'scripts/'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '.next/',
+      'coverage/',
+      'scripts/',
+      'AGENTS.md',
+      'CLAUDE.md',
+      'package-lock.json',
+    ],
   },
   { files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'] },
   { languageOptions: { globals: globals.browser } },
@@ -30,6 +39,15 @@ export default [
       react: {
         version: 'detect',
       },
+    },
+  },
+  {
+    files: [
+      'src/mdx/remark-question-spec-to-exercise.ts',
+      'src/next/apply-course-asset-webpack.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ];
