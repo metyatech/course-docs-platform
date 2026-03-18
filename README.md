@@ -22,6 +22,25 @@ This repository is intended to be consumed by:
 ## Development
 
 ```bash
+# Install dependencies
 npm install
+
+# Build
 npm run build
+
+# Run tests
+npm test
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format
 ```
+
+## Documentation
+
+- [Security Policy](SECURITY.md)
+- [Contributing Guide](CONTRIBUTING.md)
+- [License](LICENSE)
+- [Changelog](CHANGELOG.md)
