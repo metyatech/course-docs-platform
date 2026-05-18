@@ -32,6 +32,7 @@ await run(process.execPath, [
   'tests/download-link-render.test.mjs',
   'tests/exercise-contrast-styles.test.mjs',
   'tests/mdx-code-preview-boundary.test.mjs',
+  'tests/noop-task-note.test.mjs',
   'tests/remark-admonitions-to-mdx.test.mjs',
   'tests/remark-question-spec-to-exercise.test.mjs',
   'tests/remark-inject-tutorial-shot-legend.test.mjs',
