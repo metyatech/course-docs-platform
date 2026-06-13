@@ -19,6 +19,8 @@ type SubmissionsClientProps = {
 };
 
 const SYNC_INTERVAL_MS = 15000;
+const ADMIN_STATUS_PATH = '/api/admin/mode/';
+const ADMIN_SESSION_CHANGED_EVENT = 'course-docs-admin-session-changed';
 
 const formatSupabaseError = (error: unknown) => {
   if (!error || typeof error !== 'object') {
@@ -103,7 +105,7 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
   const [commentMap, setCommentMap] = useState<WorkCommentMap>({});
   const [dataError, setDataError] = useState<string | null>(null);
   const supabaseMissing = !supabase;
-  const [adminToken, setAdminToken] = useState('');
+  const [isAdminCommentModerator, setIsAdminCommentModerator] = useState(false);
   const [activeCommentStudentId, setActiveCommentStudentId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -274,16 +276,20 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
 
   const deleteComment = useCallback(
     async (commentId: string, studentId: string) => {
-      if (!adminToken.trim()) {
-        throw new Error('管理者コードが未設定です。');
+      if (!isAdminCommentModerator) {
+        throw new Error('管理者権限がありません。');
       }
 
       const response = await fetch(`/api/admin/comments/${commentId}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': adminToken.trim(),
-        },
       });
+
+      if (response.status === 401) {
+        setIsAdminCommentModerator(false);
+        throw new Error(
+          '管理者セッションの有効期限が切れています。管理者モードを再度有効にしてください。',
+        );
+      }
 
       if (!response.ok) {
         const message = await response.text();
@@ -296,7 +302,7 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
       }));
       await fetchComments();
     },
-    [adminToken, fetchComments],
+    [isAdminCommentModerator, fetchComments],
   );
 
   const saveIntro = useCallback(
@@ -330,26 +336,45 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
     [selectedYear, supabase],
   );
 
+  const fetchAdminStatus = useCallback(async () => {
+    try {
+      const response = await fetch(ADMIN_STATUS_PATH, { cache: 'no-store' });
+      if (!response.ok) {
+        setIsAdminCommentModerator(false);
+        return;
+      }
+      const data = await response.json();
+      setIsAdminCommentModerator(
+        data.enabled === true && data.capabilities?.commentModeration === true,
+      );
+    } catch {
+      setIsAdminCommentModerator(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
-    const stored = window.sessionStorage.getItem('admin-comment-token');
-    if (stored) {
-      setAdminToken(stored);
-    }
+    void fetchAdminStatus();
 
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as { token?: string };
-      setAdminToken(detail?.token ?? '');
+    const handleFocus = () => {
+      void fetchAdminStatus();
     };
 
-    window.addEventListener('admin-token', handler);
+    const handleAdminSessionChanged = () => {
+      void fetchAdminStatus();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged);
+
     return () => {
-      window.removeEventListener('admin-token', handler);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged);
     };
-  }, []);
+  }, [fetchAdminStatus]);
 
   const activeCommentWork = activeCommentStudentId
     ? studentWorksInYear.find((work) => work.studentId === activeCommentStudentId)
@@ -626,7 +651,7 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
                 <WorkComments
                   comments={activeComments}
                   isDisabled={supabaseMissing}
-                  isAdmin={adminToken.trim().length > 0}
+                  isAdmin={isAdminCommentModerator}
                   onSubmit={(name, message) =>
                     submitComment(activeCommentWork.studentId, name, message)
                   }

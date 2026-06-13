@@ -26,7 +26,6 @@ const runNpm = async (args) => {
 await runNpm(['run', 'build']);
 await run(process.execPath, [
   '--test',
-  'tests/admin-comment-delete-route-env.test.mjs',
   'tests/admonition-render.test.mjs',
   'tests/course-asset-config.test.mjs',
   'tests/download-link-render.test.mjs',
@@ -37,6 +36,7 @@ await run(process.execPath, [
   'tests/remark-inject-tutorial-shot-legend.test.mjs',
   'tests/remark-section-headings.test.mjs',
   'tests/remark-tutorial-lint.test.mjs',
+  'tests/submissions-admin-session-client.test.mjs',
   'tests/submissions-work-data.test.mjs',
   'tests/submissions-ui-regression.test.mjs',
   'tests/tutorial-action-render.test.mjs',
