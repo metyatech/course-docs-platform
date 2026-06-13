@@ -35,7 +35,6 @@
     "./next-app/download-asset-route": "./dist/next-app/download-asset-route.js",
     "./submissions": "./dist/submissions/index.js",
     "./submissions/submissions-page": "./dist/submissions/submissions-page.js",
-    "./submissions/admin-footer-toggle": "./dist/submissions/admin-footer-toggle.js",
     "./styles/*": "./styles/*"
   },
   "scripts": {

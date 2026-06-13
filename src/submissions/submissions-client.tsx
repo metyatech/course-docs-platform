@@ -22,6 +22,18 @@ const SYNC_INTERVAL_MS = 15000;
 const ADMIN_STATUS_PATH = '/api/admin/mode/';
 const ADMIN_SESSION_CHANGED_EVENT = 'course-docs-admin-session-changed';
 
+const readApiError = async (response: Response, fallback: string): Promise<string> => {
+  try {
+    const data = (await response.json()) as { error?: unknown };
+    if (data && typeof data.error === 'string' && data.error.length > 0) {
+      return data.error;
+    }
+  } catch {
+    // Response was not JSON; fall through to the generic message.
+  }
+  return fallback;
+};
+
 const formatSupabaseError = (error: unknown) => {
   if (!error || typeof error !== 'object') {
     return '保存に失敗しました。';
@@ -280,7 +292,7 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
         throw new Error('管理者権限がありません。');
       }
 
-      const response = await fetch(`/api/admin/comments/${commentId}`, {
+      const response = await fetch(`/api/admin/comments/${encodeURIComponent(commentId)}`, {
         method: 'DELETE',
       });
 
@@ -292,8 +304,7 @@ export default function SubmissionsClient({ studentWorks }: SubmissionsClientPro
       }
 
       if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || '削除に失敗しました。');
+        throw new Error(await readApiError(response, '削除に失敗しました。'));
       }
 
       setCommentMap((prev) => ({
