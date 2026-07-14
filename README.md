@@ -1,5 +1,17 @@
 # course-docs-platform
 
+> [!IMPORTANT]
+> このリポジトリはアーカイブされています。開発は
+> [`metyatech/course-docs-site`](https://github.com/metyatech/course-docs-site) の
+> [`packages/platform`](https://github.com/metyatech/course-docs-site/tree/main/packages/platform) へ移行しました。
+
+- 新しいリポジトリ: https://github.com/metyatech/course-docs-site
+- Platform package: https://github.com/metyatech/course-docs-site/tree/main/packages/platform
+- Issue / Pull Request: https://github.com/metyatech/course-docs-site/issues
+- 移行日: 2026-07-14
+
+このリポジトリは履歴を参照するための読み取り専用アーカイブです。新しいissueやpull requestは作成せず、packageの利用方法と今後の開発は新しいmonorepoを参照してください。
+
 Reusable platform package for metyatech course documentation sites.
 
 ## Purpose
