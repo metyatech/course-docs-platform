@@ -60,6 +60,5 @@ Useful commands:
 
 - [docs/admonition-authoring.md](./docs/admonition-authoring.md)
 - [LICENSE](./LICENSE)
-- [SECURITY.md](./SECURITY.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [CHANGELOG.md](./CHANGELOG.md)
